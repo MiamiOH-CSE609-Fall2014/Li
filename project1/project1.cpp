@@ -35,7 +35,7 @@ int main()
 			cin>>b[i][j];
 		}
 	}
-	//cout<<"c:"<<endl;
+	//cout<<"c:"<<endl; 
 	for(int i=0;i<y3;i++)
 	{
 		for(int j=0;j<x3;j++)
