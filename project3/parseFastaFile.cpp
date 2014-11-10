@@ -13,7 +13,7 @@ tuple<string,vector<string>,string> parseFastaFile(string fileName)
   string sequence;
   fstream input;
   input.open(fileName, fstream::in);
-  char sbuf[300];
+  char buf[300];
   while (input.getline(buf,300))
     {
       if (buf[0] == '>'){

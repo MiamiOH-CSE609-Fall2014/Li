@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <vector>
 #include <tuple>
+#include <vector>
 #include <map>
 #include "parseFastaFile.h"
 using namespace std;
