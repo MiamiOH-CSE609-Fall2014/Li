@@ -6,23 +6,26 @@
 #include <cstdlib>
 using namespace std;
 
-tuple<string,vector<string>,string> parseFastaFile(string fileName)
+tuple<string,vector<string>,string> parseFastaFile(string fName)
 {
   string header;
   vector<string>comments;
   string sequence;
   fstream input;
-  input.open(fileName, fstream::in);
+  input.open(fName, fstream::in);
   char buf[300];
-  while (input.getline(buf,300))
+  while(input.getline(buf,300))
     {
-      if (buf[0] == '>'){
+      if(buf[0]=='>')
+      {
 	header=buf;
       }
-      else if (buf[0] == ';'){
+      else if(buf[0]==';')
+      {
 	comments.push_back(buf);
       }
-      else {
+      else
+      {
 	sequence=sequence+buf;
       }
     }
