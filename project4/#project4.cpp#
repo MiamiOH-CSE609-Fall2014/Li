@@ -1,0 +1,120 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+
+#ifndef DWORD
+#define WINAPI
+typedef unsigned long DWORD;
+typedef short WCHAR;
+typedef void * HANDLE;
+#define MAX_PATH    PATH_MAX
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned int BOOL;
+#endif
+
+typedef struct tagBITMAPFILEHEADER
+{
+    WORD bfType;//Î»Í¼ÎÄ¼þµÄÀàÐÍ£¬±ØÐëÎªBM(1-2×Ö½Ú£©
+    DWORD bfSize;//Î»Í¼ÎÄ¼þµÄ´óÐ¡£¬ÒÔ×Ö½ÚÎªµ¥Î»£¨3-6×Ö½Ú£¬µÍÎ»ÔÚÇ°£©
+    WORD bfReserved1;//Î»Í¼ÎÄ¼þ±£Áô×Ö£¬±ØÐëÎª0(7-8×Ö½Ú£©
+    WORD bfReserved2;//Î»Í¼ÎÄ¼þ±£Áô×Ö£¬±ØÐëÎª0(9-10×Ö½Ú£©
+    DWORD bfOffBits;//Î»Í¼Êý¾ÝµÄÆðÊ¼Î»ÖÃ£¬ÒÔÏà¶ÔÓÚÎ»Í¼£¨11-14×Ö½Ú£¬µÍÎ»ÔÚÇ°£©
+    //ÎÄ¼þÍ·µÄÆ«ÒÆÁ¿±íÊ¾£¬ÒÔ×Ö½ÚÎªµ¥Î»
+}BITMAPFILEHEADER;
+
+typedef struct tagBITMAPINFOHEADER{
+      DWORD  biSize;//±¾½á¹¹ËùÕ¼ÓÃ×Ö½ÚÊý£¨15-18×Ö½Ú£©
+      DWORD  biWidth;//Î»Í¼µÄ¿í¶È£¬ÒÔÏñËØÎªµ¥Î»£¨19-22×Ö½Ú£©
+      DWORD  biHeight;//Î»Í¼µÄ¸ß¶È£¬ÒÔÏñËØÎªµ¥Î»£¨23-26×Ö½Ú£©
+      WORD   biPlanes;//Ä¿±êÉè±¸µÄ¼¶±ð£¬±ØÐëÎª1(27-28×Ö½Ú£©
+      WORD   biBitCount;
+//Ã¿¸öÏñËØËùÐèµÄÎ»Êý£¬±ØÐëÊÇ1£¨Ë«É«£©£¬£¨29-30×Ö½Ú£©4(16É«£©£¬8(256É«£©16(¸ß²ÊÉ«)»ò24£¨Õæ²ÊÉ«£©Ö®Ò»
+      DWORD  biCompression;
+//Î»Í¼Ñ¹ËõÀàÐÍ£¬±ØÐëÊÇ0£¨²»Ñ¹Ëõ£©£¬£¨31-34×Ö½Ú£©1(BI_RLE8Ñ¹ËõÀàÐÍ£©»ò2(BI_RLE4Ñ¹ËõÀàÐÍ£©Ö®Ò»
+      DWORD  biSizeImage;//Î»Í¼µÄ´óÐ¡(ÆäÖÐ°üº¬ÁËÎªÁË²¹ÆëÐÐÊýÊÇ4µÄ±¶Êý¶øÌí¼ÓµÄ¿Õ×Ö½Ú)£¬ÒÔ×Ö½ÚÎªµ¥Î»£¨35-38×Ö½Ú£©
+      DWORD  biXPelsPerMeter;//Î»Í¼Ë®Æ½·Ö±æÂÊ£¬Ã¿Ã×ÏñËØÊý£¨39-42×Ö½Ú£©
+      DWORD  biYPelsPerMeter;//Î»Í¼´¹Ö±·Ö±æÂÊ£¬Ã¿Ã×ÏñËØÊý£¨43-46×Ö½Ú)
+      DWORD  biClrUsed;//Î»Í¼Êµ¼ÊÊ¹ÓÃµÄÑÕÉ«±íÖÐµÄÑÕÉ«Êý£¨47-50×Ö½Ú£©
+      DWORD  biClrImportant;//Î»Í¼ÏÔÊ¾¹ý³ÌÖÐÖØÒªµÄÑÕÉ«Êý£¨51-54×Ö½Ú£©
+   } BITMAPINFOHEADER;
+
+void writeHeader(ostream& out, int width, int height)
+{
+	BITMAPFILEHEADER tWBFH;
+	tWBFH.bfType = 0x4d42;
+	tWBFH.bfSize = 14 + 40 + (width*height*3);
+	tWBFH.bfReserved1 = 0;
+	tWBFH.bfReserved2 = 0;
+	tWBFH.bfOffBits = 14 + 40;
+
+	BITMAPINFOHEADER tW2BH;
+	//memset(&tW2BH,0,40);
+	tW2BH.biSize = 40;
+	tW2BH.biWidth = width;
+	tW2BH.biHeight = height;
+	tW2BH.biPlanes = 1;
+	tW2BH.biBitCount = 24;
+	tW2BH.biCompression = 0;
+
+	out.write((char*)(&tWBFH),14);
+	out.write((char*)(&tW2BH),40);
+}
+
+//Information on BMP format was provided by www.fileformat.info/format/bmp/egff.htm
+void readHeader(istream& in, int& width, int& height){
+	BITMAPFILEHEADER tWBFH;
+	BITMAPINFOHEADER tW2BH;
+	in.read((char*)(&tWBFH),14);
+	in.read((char*)(&tW2BH),40);
+	width = tW2BH.biWidth;
+	height = tW2BH.biHeight;
+}
+
+void makeCheckerboardBMP(string fileName, int squaresize, int n)
+{
+  if(fileName=="")
+    cout<<"No File Name Input"<<endl;
+  else
+    {
+      if (squaresize<=0||n<=0)
+	cout<<"Illegal Value Input"<<endl;
+      else
+	{
+	  if ((squaresize*n)&4!=0)
+	    cout<<"(squaresize*n)&4 not equal to 0 "<<endl;
+	  else
+	    {
+	      string fname=fileName+".bmp";
+	      fstream myFile(fname,ios::out|ios::binary);
+	      //ofstream myFile(fname);
+	      writeHeader(myFile,squaresize*n,squaresize*n);
+	      char r,g,b;
+	      for (int row=0;row<squaresize*n;row++)
+		{
+		  for (int col=0;col<squaresize*n;col++)
+		    {
+		      if ((row/squaresize+col/squaresize)%2==1)
+			r=0,g=0,b=0;
+		      else
+			{
+			  r=255,g=255,b=255;
+			}
+		      myFile.write(&r,1);
+		      myFile.write(&g,1);
+		      myFile.write(&b,1);
+		    }
+		}
+	      myFile.close(); 
+	    }
+	}
+    }
+}
+
+int main()
+{
+  makeCheckerboardBMP("checkerboard15_20",15,20);
+  return 0;
+}

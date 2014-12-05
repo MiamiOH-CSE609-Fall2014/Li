@@ -1,0 +1,120 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+
+#ifndef DWORD
+#define WINAPI
+typedef unsigned long DWORD;
+typedef short WCHAR;
+typedef void * HANDLE;
+#define MAX_PATH    PATH_MAX
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned int BOOL;
+#endif
+
+typedef struct tagBITMAPFILEHEADER
+{
+    WORD bfType;//位图文件的类型，必须为BM(1-2字节）
+    DWORD bfSize;//位图文件的大小，以字节为单位（3-6字节，低位在前）
+    WORD bfReserved1;//位图文件保留字，必须为0(7-8字节）
+    WORD bfReserved2;//位图文件保留字，必须为0(9-10字节）
+    DWORD bfOffBits;//位图数据的起始位置，以相对于位图（11-14字节，低位在前）
+    //文件头的偏移量表示，以字节为单位
+}BITMAPFILEHEADER;
+
+typedef struct tagBITMAPINFOHEADER{
+      DWORD  biSize;//本结构所占用字节数（15-18字节）
+      DWORD  biWidth;//位图的宽度，以像素为单位（19-22字节）
+      DWORD  biHeight;//位图的高度，以像素为单位（23-26字节）
+      WORD   biPlanes;//目标设备的级别，必须为1(27-28字节）
+      WORD   biBitCount;
+//每个像素所需的位数，必须是1（双色），（29-30字节）4(16色），8(256色）16(高彩色)或24（真彩色）之一
+      DWORD  biCompression;
+//位图压缩类型，必须是0（不压缩），（31-34字节）1(BI_RLE8压缩类型）或2(BI_RLE4压缩类型）之一
+      DWORD  biSizeImage;//位图的大小(其中包含了为了补齐行数是4的倍数而添加的空字节)，以字节为单位（35-38字节）
+      DWORD  biXPelsPerMeter;//位图水平分辨率，每米像素数（39-42字节）
+      DWORD  biYPelsPerMeter;//位图垂直分辨率，每米像素数（43-46字节)
+      DWORD  biClrUsed;//位图实际使用的颜色表中的颜色数（47-50字节）
+      DWORD  biClrImportant;//位图显示过程中重要的颜色数（51-54字节）
+   } BITMAPINFOHEADER;
+
+void writeHeader(ostream& out, int width, int height)
+{
+	BITMAPFILEHEADER tWBFH;
+	tWBFH.bfType = 0x4d42;
+	tWBFH.bfSize = 14 + 40 + (width*height*3);
+	tWBFH.bfReserved1 = 0;
+	tWBFH.bfReserved2 = 0;
+	tWBFH.bfOffBits = 14 + 40;
+
+	BITMAPINFOHEADER tW2BH;
+	//memset(&tW2BH,0,40);
+	tW2BH.biSize = 40;
+	tW2BH.biWidth = width;
+	tW2BH.biHeight = height;
+	tW2BH.biPlanes = 1;
+	tW2BH.biBitCount = 24;
+	tW2BH.biCompression = 0;
+
+	out.write((char*)(&tWBFH),14);
+	out.write((char*)(&tW2BH),40);
+}
+
+//Information on BMP format was provided by www.fileformat.info/format/bmp/egff.htm
+void readHeader(istream& in, int& width, int& height){
+	BITMAPFILEHEADER tWBFH;
+	BITMAPINFOHEADER tW2BH;
+	in.read((char*)(&tWBFH),14);
+	in.read((char*)(&tW2BH),40);
+	width = tW2BH.biWidth;
+	height = tW2BH.biHeight;
+}
+
+void makeCheckerboardBMP(string fileName, int squaresize, int n)
+{
+  if(fileName=="")
+    cout<<"No File Name Input"<<endl;
+  else
+    {
+      if (squaresize<=0||n<=0)
+	cout<<"Illegal Value Input"<<endl;
+      else
+	{
+	  if ((squaresize*n)&4!=0)
+	    cout<<"(squaresize*n)&4 not equal to 0 "<<endl;
+	  else
+	    {
+	      string fname=fileName+".bmp";
+	      //ofstream myFile(fname,ios::out|ios::binary);
+	      ofstream myFile(fname);
+	      writeHeader(myFile,squaresize*n,squaresize*n);
+	      char r,g,b;
+	      for (int row=0;row<squaresize*n;row++)
+		{
+		  for (int col=0;col<squaresize*n;col++)
+		    {
+		      if ((row/squaresize+col/squaresize)%2==1)
+			r=0,g=0,b=0;
+		      else
+			{
+			  r=255,g=255,b=255;
+			}
+		      myFile.write(&r,1);
+		      myFile.write(&g,1);
+		      myFile.write(&b,1);
+		    }
+		}
+	      myFile.close(); 
+	    }
+	}
+    }
+}
+
+int main()
+{
+  makeCheckerboardBMP("checkerboard15_20",15,20);
+  return 0;
+}
